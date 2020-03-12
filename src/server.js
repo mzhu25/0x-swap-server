@@ -43,11 +43,10 @@ class Server {
                         gas: quote.worstCaseQuoteInfo.gas || 0,
                         gasPrice: quote.gasPrice,
                         orders: cleanSignedOrderFields(quote.orders),
-                        protocolFee: quote.worstCaseQuoteInfo.protocolFee,
                         sources: convertSourceBreakdownToArray(quote.sourceBreakdown),
                         buyAmount: quote.bestCaseQuoteInfo.makerAssetAmount,
                         sellAmount: quote.bestCaseQuoteInfo.totalTakerAssetAmount,
-                        protocolFee: quote.bestCaseQuoteInfo.protocolFeeInWeiAmount,
+                        protocolFee: quote.worstCaseQuoteInfo.protocolFeeInWeiAmount,
                         buyTokenAddress: quoterOpts.buyTokenAddress,
                         sellTokenAddress: quoterOpts.sellTokenAddress,
                     });

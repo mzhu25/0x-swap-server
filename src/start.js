@@ -42,7 +42,7 @@ const ASSET_SWAPPER_MARKET_ORDERS_OPTS = {
     runLimit: 2 ** 15,
     bridgeSlippage: 0.01,
     slippagePercentage: 0.01,
-    dustFractionThreshold: 0.0025,
+    dustFractionThreshold: 0.0015,
     numSamples: 13,
     sampleDistributionBase: 1.05,
     fees: FEE_SCHEDULE,
