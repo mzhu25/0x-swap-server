@@ -48,6 +48,7 @@ const ASSET_SWAPPER_MARKET_ORDERS_OPTS = {
     fees: FEE_SCHEDULE,
     feeSchedule: FEE_SCHEDULE,
     gasSchedule: GAS_SCHEDULE,
+    maxFallbackSlippage: 0.015,
     allowFallback: !!ARGV.fallback,
 };
 const SWAP_QUOTER_OPTS = {
@@ -88,6 +89,15 @@ function createProductionQuoter(provider, orderbook) {
     );
     return async (opts) => {
         console.log(`prod: ${JSON.stringify(opts)}`);
+        const marketOpts = {
+            ...ASSET_SWAPPER_MARKET_ORDERS_OPTS,
+            ...(opts.gasPrice === undefined
+                ? {} : { gasPrice: opts.gasPrice }),
+            ...(opts.numSamples === undefined
+                ? {} : { numSamples: opts.numSamples }),
+            ...(opts.runLimit === undefined
+                ? {} : { runLimit: opts.runLimit }),
+        };
         if (opts.buyAmount) {
             return swapQuoter.getMarketBuySwapQuoteAsync(
                 opts.buyTokenAddress,
@@ -113,19 +123,30 @@ function createDevelopmentQuoter(provider, orderbook) {
     );
     return async (opts) => {
         console.log(`dev: ${JSON.stringify(opts)}`);
+        const marketOpts = {
+            ...ASSET_SWAPPER_MARKET_ORDERS_OPTS,
+            ...(opts.maxFallbackSlippage === undefined
+                ? {} : { maxFallbackSlippage: opts.maxFallbackSlippage }),
+            ...(opts.gasPrice === undefined
+                ? {} : { gasPrice: opts.gasPrice }),
+            ...(opts.numSamples === undefined
+                ? {} : { numSamples: opts.numSamples }),
+            ...(opts.runLimit === undefined
+                ? {} : { runLimit: opts.runLimit }),
+        };
         if (opts.buyAmount) {
             return swapQuoter.getMarketBuySwapQuoteAsync(
                 opts.buyTokenAddress,
                 opts.sellTokenAddress,
                 opts.buyAmount,
-                ASSET_SWAPPER_MARKET_ORDERS_OPTS,
+                marketOpts,
             );
         }
         return swapQuoter.getMarketSellSwapQuoteAsync(
             opts.buyTokenAddress,
             opts.sellTokenAddress,
             opts.sellAmount,
-            ASSET_SWAPPER_MARKET_ORDERS_OPTS,
+            marketOpts,
         );
     };
 }
