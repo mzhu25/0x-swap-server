@@ -42,7 +42,7 @@ const ASSET_SWAPPER_MARKET_ORDERS_OPTS = {
     runLimit: 2 ** 15,
     bridgeSlippage: 0.01,
     slippagePercentage: 0.01,
-    dustFractionThreshold: 0.0015,
+    dustFractionThreshold: 0.0025,
     numSamples: 13,
     sampleDistributionBase: 1.05,
     fees: FEE_SCHEDULE,
@@ -125,6 +125,7 @@ function createDevelopmentQuoter(provider, orderbook) {
         console.log(`dev: ${JSON.stringify(opts)}`);
         const marketOpts = {
             ...ASSET_SWAPPER_MARKET_ORDERS_OPTS,
+            bridgeSlippage: 0.015,
             ...(opts.maxFallbackSlippage === undefined
                 ? {} : { maxFallbackSlippage: opts.maxFallbackSlippage }),
             ...(opts.gasPrice === undefined
