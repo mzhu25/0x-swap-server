@@ -125,7 +125,8 @@ function createDevelopmentQuoter(provider, orderbook) {
         console.log(`dev: ${JSON.stringify(opts)}`);
         const marketOpts = {
             ...ASSET_SWAPPER_MARKET_ORDERS_OPTS,
-            bridgeSlippage: 0.03,
+            ...(opts.bridgeSlippage === undefined
+                ? {} : { bridgeSlippage: opts.bridgeSlippage }),
             ...(opts.maxFallbackSlippage === undefined
                 ? {} : { maxFallbackSlippage: opts.maxFallbackSlippage }),
             ...(opts.gasPrice === undefined

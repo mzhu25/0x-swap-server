@@ -88,6 +88,7 @@ function createQuoterOpts(query) {
         sellTokenAddress: TOKENS[sellToken].address,
         buyAmount: buyAmount !== undefined ? new BigNumber(buyAmount) : undefined,
         sellAmount: sellAmount !== undefined ? new BigNumber(sellAmount) : undefined,
+        bridgeSlippage: query.bridgeSlippage !== undefined ? parseFloat(query.bridgeSlippage) : undefined,
         maxFallbackSlippage: query.maxFallbackSlippage !== undefined ? parseFloat(query.maxFallbackSlippage) : undefined,
         gasPrice: query.gasPrice !== undefined ? new BigNumber(query.gasPrice) : undefined,
         numSamples: query.numSamples !== undefined ? parseInt(query.numSamples) : undefined,
