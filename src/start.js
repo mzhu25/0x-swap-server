@@ -2,7 +2,7 @@
 require('colors');
 const { ERC20BridgeSource, SwapQuoter: ProdSwapQuoter } = require('@0x/asset-swapper');
 const { SwapQuoter: DevSwapQuoter } = require('@0x/asset-swapper-dev');
-const { getContractAddressesForChainOrThrow } = require('@0x/contract-addresses-dev');
+const { getContractAddressesForChainOrThrow } = require('@0x/contract-addresses');
 const { Orderbook } = require('@0x/orderbook-dev');
 const { RPCSubprovider, SupportedProvider, Web3ProviderEngine } = require('@0x/subproviders');
 const { providerUtils: ZeroExProviderUtils } = require('@0x/utils');
@@ -12,43 +12,39 @@ const yargs = require('yargs');
 const { Server } = require('./server');
 
 const ARGV = yargs
-    .number('port')
+    .number('port').default('port', 7001)
     .boolean('fallback').default('fallback', true)
-    .default('port', 7001)
+    .string('pool')
     .argv;
 
 const ADDRESSES = getContractAddressesForChainOrThrow(1);
 const SRA_API_URL = 'https://api.0x.org/sra';
 const GAS_SCHEDULE = {
-    [ERC20BridgeSource.Uniswap]: new BigNumber(2.5e5),
-    [ERC20BridgeSource.Native]: new BigNumber(2e5),
-    [ERC20BridgeSource.CurveUsdcDai]: new BigNumber(4e5),
-    [ERC20BridgeSource.Eth2Dai]: new BigNumber(5e5),
-    [ERC20BridgeSource.CurveUsdcDaiUsdt]: new BigNumber(5e5),
-    [ERC20BridgeSource.CurveUsdcDaiUsdtTusd]: new BigNumber(8e5),
-    [ERC20BridgeSource.CurveUsdcDaiUsdtBusd]: new BigNumber(8e5),
-    [ERC20BridgeSource.Kyber]: new BigNumber(8e5),
+    [ERC20BridgeSource.Native]: 1.5e5,
+    [ERC20BridgeSource.Uniswap]: 3e5,
+    [ERC20BridgeSource.LiquidityProvider]: 4.5e5,
+    [ERC20BridgeSource.Eth2Dai]: 5.5e5,
+    [ERC20BridgeSource.Kyber]: 8e5,
+    [ERC20BridgeSource.CurveUsdcDai]: 9e5,
+    [ERC20BridgeSource.CurveUsdcDaiUsdt]: 9e5,
+    [ERC20BridgeSource.CurveUsdcDaiUsdtTusd]: 10e5,
+    [ERC20BridgeSource.CurveUsdcDaiUsdtBusd]: 10e5,
 };
-const FEE_SCHEDULE = {
-    ...GAS_SCHEDULE,
-    [ERC20BridgeSource.Native]: GAS_SCHEDULE[ERC20BridgeSource.Native].plus(150e3),
-};
-for (const [k, v] of Object.entries(GAS_SCHEDULE)) {
-    GAS_SCHEDULE[k] = v.toNumber();
-}
-const ASSET_SWAPPER_MARKET_ORDERS_OPTS = {
-    noConflicts: true,
+const FEE_SCHEDULE = Object.assign(
+    {},
+    ...Object.keys(GAS_SCHEDULE).map(k => ({
+        [k]: new BigNumber(GAS_SCHEDULE[k] + 1.5e5),
+    })),
+);
+const DEFAULT_MARKET_OPTS = {
     excludedSources: [],
     runLimit: 2 ** 15,
-    bridgeSlippage: 0.01,
-    slippagePercentage: 0.01,
-    dustFractionThreshold: 0.0025,
+    bridgeSlippage: 0.03,
+    maxFallbackSlippage: 0.015,
     numSamples: 13,
     sampleDistributionBase: 1.05,
-    fees: FEE_SCHEDULE,
     feeSchedule: FEE_SCHEDULE,
     gasSchedule: GAS_SCHEDULE,
-    maxFallbackSlippage: 0.015,
     allowFallback: !!ARGV.fallback,
 };
 const SWAP_QUOTER_OPTS = {
@@ -61,6 +57,7 @@ const SWAP_QUOTER_OPTS = {
     const orderbook = createOrderbook(SRA_API_URL);
     const server = new Server(provider);
     server.addQuoteEndpoint('/swap/prod/quote', createProductionQuoter(provider, orderbook));
+    server.addQuoteEndpoint('/swap/pool/quote', createLiquidityPoolQuoter(provider, orderbook));
     server.addQuoteEndpoint('/swap/dev/quote', createDevelopmentQuoter(provider, orderbook));
     await server.listen(ARGV.port);
     console.log(`${'*'.bold} Listening on port ${ARGV.port.toString().bold.green}...`);
@@ -81,6 +78,18 @@ function createZeroExProvider(rpcHost) {
     return providerEngine;
 }
 
+function mergeOpts(...opts) {
+    const r = {};
+    for (const o of opts) {
+        for (const k in o) {
+            if (o[k] !== undefined) {
+                r[k] = o[k];
+            }
+        }
+    }
+    return r;
+}
+
 function createProductionQuoter(provider, orderbook) {
     const swapQuoter = new ProdSwapQuoter(
         provider,
@@ -89,28 +98,49 @@ function createProductionQuoter(provider, orderbook) {
     );
     return async (opts) => {
         console.log(`prod: ${JSON.stringify(opts)}`);
-        const marketOpts = {
-            ...ASSET_SWAPPER_MARKET_ORDERS_OPTS,
-            ...(opts.gasPrice === undefined
-                ? {} : { gasPrice: opts.gasPrice }),
-            ...(opts.numSamples === undefined
-                ? {} : { numSamples: opts.numSamples }),
-            ...(opts.runLimit === undefined
-                ? {} : { runLimit: opts.runLimit }),
-        };
+        const marketOpts = mergeOpts(DEFAULT_MARKET_OPTS, opts);
         if (opts.buyAmount) {
             return swapQuoter.getMarketBuySwapQuoteAsync(
                 opts.buyTokenAddress,
                 opts.sellTokenAddress,
                 opts.buyAmount,
-                ASSET_SWAPPER_MARKET_ORDERS_OPTS,
+                DEFAULT_MARKET_OPTS,
             );
         }
         return swapQuoter.getMarketSellSwapQuoteAsync(
             opts.buyTokenAddress,
             opts.sellTokenAddress,
             opts.sellAmount,
-            ASSET_SWAPPER_MARKET_ORDERS_OPTS,
+            DEFAULT_MARKET_OPTS,
+        );
+    };
+}
+
+function createLiquidityPoolQuoter(provider, orderbook) {
+    const swapQuoter = new ProdSwapQuoter(
+        provider,
+        orderbook,
+        {
+            ...SWAP_QUOTER_OPTS,
+            liquidityProviderRegistryAddress: ARGV.pool,
+        },
+    );
+    return async (opts) => {
+        console.log(`pool: ${JSON.stringify(opts)}`);
+        const marketOpts = mergeOpts(DEFAULT_MARKET_OPTS, opts);
+        if (opts.buyAmount) {
+            return swapQuoter.getMarketBuySwapQuoteAsync(
+                opts.buyTokenAddress,
+                opts.sellTokenAddress,
+                opts.buyAmount,
+                DEFAULT_MARKET_OPTS,
+            );
+        }
+        return swapQuoter.getMarketSellSwapQuoteAsync(
+            opts.buyTokenAddress,
+            opts.sellTokenAddress,
+            opts.sellAmount,
+            DEFAULT_MARKET_OPTS,
         );
     };
 }
@@ -123,19 +153,7 @@ function createDevelopmentQuoter(provider, orderbook) {
     );
     return async (opts) => {
         console.log(`dev: ${JSON.stringify(opts)}`);
-        const marketOpts = {
-            ...ASSET_SWAPPER_MARKET_ORDERS_OPTS,
-            ...(opts.bridgeSlippage === undefined
-                ? {} : { bridgeSlippage: opts.bridgeSlippage }),
-            ...(opts.maxFallbackSlippage === undefined
-                ? {} : { maxFallbackSlippage: opts.maxFallbackSlippage }),
-            ...(opts.gasPrice === undefined
-                ? {} : { gasPrice: opts.gasPrice }),
-            ...(opts.numSamples === undefined
-                ? {} : { numSamples: opts.numSamples }),
-            ...(opts.runLimit === undefined
-                ? {} : { runLimit: opts.runLimit }),
-        };
+        const marketOpts = mergeOpts(DEFAULT_MARKET_OPTS, opts);
         if (opts.buyAmount) {
             return swapQuoter.getMarketBuySwapQuoteAsync(
                 opts.buyTokenAddress,
