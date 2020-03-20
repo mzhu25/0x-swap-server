@@ -22,7 +22,7 @@ const SRA_API_URL = 'https://api.0x.org/sra';
 const GAS_SCHEDULE = {
     [ERC20BridgeSource.Native]: 1.5e5,
     [ERC20BridgeSource.Uniswap]: 3e5,
-    [ERC20BridgeSource.LiquidityProvider]: 4.5e5,
+    [ERC20BridgeSource.LiquidityProvider]: 3e5,
     [ERC20BridgeSource.Eth2Dai]: 5.5e5,
     [ERC20BridgeSource.Kyber]: 8e5,
     [ERC20BridgeSource.CurveUsdcDai]: 9e5,
@@ -30,6 +30,7 @@ const GAS_SCHEDULE = {
     [ERC20BridgeSource.CurveUsdcDaiUsdtTusd]: 10e5,
     [ERC20BridgeSource.CurveUsdcDaiUsdtBusd]: 10e5,
 };
+console.log(ERC20BridgeSource, GAS_SCHEDULE);
 const FEE_SCHEDULE = Object.assign(
     {},
     ...Object.keys(GAS_SCHEDULE).map(k => ({
@@ -46,10 +47,12 @@ const DEFAULT_MARKET_OPTS = {
     feeSchedule: FEE_SCHEDULE,
     gasSchedule: GAS_SCHEDULE,
     allowFallback: !!ARGV.fallback,
+    // excludedSources: [ERC20BridgeSource.Native],
 };
 const SWAP_QUOTER_OPTS = {
     chainId: 1,
     contractAddresses: ADDRESSES,
+    liquidityProviderRegistryAddress: ARGV.pool,
 };
 
 (async() => {
@@ -57,7 +60,6 @@ const SWAP_QUOTER_OPTS = {
     const orderbook = createOrderbook(SRA_API_URL);
     const server = new Server(provider);
     server.addQuoteEndpoint('/swap/prod/quote', createProductionQuoter(provider, orderbook));
-    server.addQuoteEndpoint('/swap/pool/quote', createLiquidityPoolQuoter(provider, orderbook));
     server.addQuoteEndpoint('/swap/dev/quote', createDevelopmentQuoter(provider, orderbook));
     await server.listen(ARGV.port);
     console.log(`${'*'.bold} Listening on port ${ARGV.port.toString().bold.green}...`);
@@ -104,43 +106,14 @@ function createProductionQuoter(provider, orderbook) {
                 opts.buyTokenAddress,
                 opts.sellTokenAddress,
                 opts.buyAmount,
-                DEFAULT_MARKET_OPTS,
+                marketOpts,
             );
         }
         return swapQuoter.getMarketSellSwapQuoteAsync(
             opts.buyTokenAddress,
             opts.sellTokenAddress,
             opts.sellAmount,
-            DEFAULT_MARKET_OPTS,
-        );
-    };
-}
-
-function createLiquidityPoolQuoter(provider, orderbook) {
-    const swapQuoter = new ProdSwapQuoter(
-        provider,
-        orderbook,
-        {
-            ...SWAP_QUOTER_OPTS,
-            liquidityProviderRegistryAddress: ARGV.pool,
-        },
-    );
-    return async (opts) => {
-        console.log(`pool: ${JSON.stringify(opts)}`);
-        const marketOpts = mergeOpts(DEFAULT_MARKET_OPTS, opts);
-        if (opts.buyAmount) {
-            return swapQuoter.getMarketBuySwapQuoteAsync(
-                opts.buyTokenAddress,
-                opts.sellTokenAddress,
-                opts.buyAmount,
-                DEFAULT_MARKET_OPTS,
-            );
-        }
-        return swapQuoter.getMarketSellSwapQuoteAsync(
-            opts.buyTokenAddress,
-            opts.sellTokenAddress,
-            opts.sellAmount,
-            DEFAULT_MARKET_OPTS,
+            marketOpts,
         );
     };
 }

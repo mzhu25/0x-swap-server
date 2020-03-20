@@ -21,6 +21,7 @@
         "yargs": "^15.1.0"
     },
     "resolutions": {
+        "@0x/asset-swapper": "0xProject/gitpkg-registry#0x-asset-swapper-v4.4.0-aaa62beca",
         "@0x/asset-swapper-dev/@0x/contract-wrappers": "file:/home/cluracan/code/0x-monorepo/packages/contract-wrappers",
         "@0x/asset-swapper/@0x/contract-wrappers": "0xProject/gitpkg-registry#0x-contract-wrappers-v13.6.3-e3f3bb670"
     }
