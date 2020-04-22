@@ -1,6 +1,6 @@
 'use strict'
 const { SwapQuoteConsumer} = require('@0x/asset-swapper');
-const { getContractAddressesForChainOrThrow } = require('@0x/contract-addresses-dev');
+const { getContractAddressesForChainOrThrow } = require('@0x/contract-addresses');
 const BigNumber = require('bignumber.js');
 const express = require('express');
 const TOKENS = require('./tokens');
