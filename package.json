@@ -8,7 +8,6 @@
     },
     "dependencies": {
         "@0x/asset-swapper": "file:/Users/michaelzhu/monorepo/packages/asset-swapper",
-        "@0x/contract-addresses": "0xProject/gitpkg-registry#0x-contract-addresses-v4.9.0-110e1afa8",
         "@0x/orderbook": "^2.2.5",
         "@0x/subproviders": "^6.0.8",
         "@0x/utils": "^5.4.1",
@@ -18,7 +17,7 @@
         "yargs": "^15.1.0"
     },
     "resolutions": {
-        "@0x/contract-addresses": "0xProject/gitpkg-registry#0x-contract-addresses-v4.9.0-110e1afa8",
-        "@0x/asset-swapper/@0x/contract-wrappers": "0xProject/gitpkg-registry#0x-contract-wrappers-v13.6.3-a458e81f8"
+        "@0x/asset-swapper/@0x/contract-addresses": "file:/Users/michaelzhu/monorepo/packages/contract-addresses",
+        "@0x/asset-swapper/@0x/contract-wrappers": "file:/Users/michaelzhu/monorepo/packages/contract-wrappers"
     }
 }

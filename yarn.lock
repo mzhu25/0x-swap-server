@@ -73,13 +73,11 @@
     uuid "^3.3.2"
     websocket "^1.0.26"
 
-"@0x/contract-addresses@0xProject/gitpkg-registry#0x-contract-addresses-v4.9.0-110e1afa8", "@0x/contract-addresses@^4.9.0":
+"@0x/contract-addresses@^4.9.0", "@0x/contract-addresses@file:/Users/michaelzhu/monorepo/packages/contract-addresses":
   version "4.9.0"
-  resolved "https://codeload.github.com/0xProject/gitpkg-registry/tar.gz/93578492c2db18a5fb88709156fe50aa00b086aa"
 
-"@0x/contract-wrappers@0xProject/gitpkg-registry#0x-contract-wrappers-v13.6.3-a458e81f8", "@0x/contract-wrappers@^13.6.3":
+"@0x/contract-wrappers@^13.6.3", "@0x/contract-wrappers@file:/Users/michaelzhu/monorepo/packages/contract-wrappers":
   version "13.6.3"
-  resolved "https://codeload.github.com/0xProject/gitpkg-registry/tar.gz/a0e131fc683042811b1944e9ab94caaaada89e8b"
   dependencies:
     "@0x/assert" "^3.0.7"
     "@0x/base-contract" "^6.2.1"

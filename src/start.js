@@ -36,9 +36,11 @@ const GAS_SCHEDULE = {
   [ERC20BridgeSource.CurveUsdcDaiUsdt]: 9e5,
   [ERC20BridgeSource.CurveUsdcDaiUsdtTusd]: 10e5,
   [ERC20BridgeSource.CurveUsdcDaiUsdtBusd]: 10e5,
-  [ERC20BridgeSource.MultiBridge]: 7e5
+  [ERC20BridgeSource.CurveUsdcDaiUsdtSusd]: 6e5,
+  [ERC20BridgeSource.MultiBridge]: 6.5e5,
+  [ERC20BridgeSource.UniswapV2]: 3.5e5,
+  [ERC20BridgeSource.UniswapV2Eth]: 3.5e5
 };
-console.log(ERC20BridgeSource, GAS_SCHEDULE);
 const FEE_SCHEDULE = Object.assign(
   {},
   ...Object.keys(GAS_SCHEDULE).map(k => ({
@@ -48,7 +50,7 @@ const FEE_SCHEDULE = Object.assign(
 const DEFAULT_MARKET_OPTS = {
   excludedSources: [],
   runLimit: 2 ** 15,
-  bridgeSlippage: 0.03,
+  bridgeSlippage: 0.01,
   maxFallbackSlippage: 0.015,
   numSamples: 13,
   sampleDistributionBase: 1.05,
@@ -115,14 +117,9 @@ function createProductionQuoter(provider, orderbook) {
       {
         ...DEFAULT_MARKET_OPTS,
         excludedSources: [
-          ERC20BridgeSource.Native,
-          ERC20BridgeSource.Eth2Dai,
-          ERC20BridgeSource.Kyber,
           ERC20BridgeSource.MultiBridge,
-          ERC20BridgeSource.CurveUsdcDai,
-          ERC20BridgeSource.CurveUsdcDaiUsdt,
-          ERC20BridgeSource.CurveUsdcDaiUsdtTusd,
-          ERC20BridgeSource.CurveUsdcDaiUsdtBusd,
+          ERC20BridgeSource.UniswapV2,
+          ERC20BridgeSource.UniswapV2Eth
         ]
       },
       opts
@@ -147,7 +144,7 @@ function createProductionQuoter(provider, orderbook) {
 function createDevelopmentQuoter(provider, orderbook) {
   const swapQuoter = new SwapQuoter(provider, orderbook, {
     ...SWAP_QUOTER_OPTS,
-    multiBridgeRegistryAddress: ARGV.mb
+    multiBridgeAddress: ARGV.mb
   });
   return async opts => {
     console.log(`dev: ${JSON.stringify(opts)}`);
@@ -156,14 +153,10 @@ function createDevelopmentQuoter(provider, orderbook) {
         ...DEFAULT_MARKET_OPTS,
         excludedSources: [
           ERC20BridgeSource.Native,
-          ERC20BridgeSource.Eth2Dai,
-          ERC20BridgeSource.Kyber,
           ERC20BridgeSource.Uniswap,
-          ERC20BridgeSource.LiquidityProvider,
-          ERC20BridgeSource.CurveUsdcDai,
-          ERC20BridgeSource.CurveUsdcDaiUsdt,
-          ERC20BridgeSource.CurveUsdcDaiUsdtTusd,
-          ERC20BridgeSource.CurveUsdcDaiUsdtBusd,
+          ERC20BridgeSource.Kyber,
+          ERC20BridgeSource.UniswapV2,
+          ERC20BridgeSource.UniswapV2Eth
         ]
       },
       opts
